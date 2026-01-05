@@ -6,5 +6,18 @@
 # macOS folder attributes
 __MACOSX/
 
+# Python cache
+__pycache__/
+*.pyc
+
 # raw data folder
 raw/
+
+# data and output folders
+data/
+logs/
+visualizations/
+
+# documentation files to exclude
+WISDM-dataset-description.pdf
+wisdm51_instructions.md
