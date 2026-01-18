@@ -46,5 +46,16 @@ RANDOM_STATE = 42
 TEST_SIZE = 0.2
 NUM_FEATURES = 30  # Number of features to select
 
+# Spectral feature parameters
+SPECTRAL_ROLLOFF_THRESHOLD = 0.85  # 85% energy threshold
+SPECTRAL_PEAK_PROMINENCE = 0.5     # Relative to mean magnitude
+NUM_SPECTRAL_FEATURES = 30         # Features to select for spectral
+
+# Frequency bands (Hz) - Nyquist frequency = sampling_rate/2 = 10Hz
+FREQ_BANDS = {
+    'low': (0, 5),
+    'mid': (5, 10),
+}
+
 # Metadata columns (activity_label is numeric 0-17)
 METADATA_COLS = ['subject_id', 'activity_label', 'sensor_type', 'device']
