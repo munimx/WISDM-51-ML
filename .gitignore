@@ -21,3 +21,14 @@ visualizations/
 # documentation files to exclude
 WISDM-dataset-description.pdf
 wisdm51_instructions.md
+# LaTeX files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# UCP logo
+ucp logo.png
