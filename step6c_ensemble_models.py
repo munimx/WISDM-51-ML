@@ -20,20 +20,36 @@ from sklearn.ensemble import (RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
+from tqdm import tqdm
 
 from config import (DATA_DIR, VIS_DIR, METADATA_COLS, RANDOM_STATE, TEST_SIZE,
                     CV_FOLDS, N_JOBS, VOTING_WEIGHTS, STACKING_CV, ACTIVITY_NAMES)
 from logger import logger
 
+# Ensemble-specific optimizations
+ENSEMBLE_CV_SAMPLE_SIZE = 30000
+ENSEMBLE_CV_FOLDS = 3
+ENSEMBLE_N_JOBS = max(1, (N_JOBS if N_JOBS > 0 else os.cpu_count()) // 2)
+
 
 def get_base_models():
-    """Return optimized base models for ensemble."""
+    """Return optimized base models for ensemble (without GradientBoosting)."""
     
+    # REMOVED GradientBoosting - too slow for ensemble training
     models = [
-        ('knn', KNeighborsClassifier(n_neighbors=5, weights='distance', metric='manhattan')),
-        ('dt', DecisionTreeClassifier(max_depth=20, min_samples_split=5, random_state=RANDOM_STATE)),
-        ('rf', RandomForestClassifier(n_estimators=200, max_depth=20, n_jobs=N_JOBS, random_state=RANDOM_STATE)),
-        ('gb', GradientBoostingClassifier(n_estimators=150, learning_rate=0.1, max_depth=5, random_state=RANDOM_STATE))
+        ('knn', KNeighborsClassifier(
+            n_neighbors=5, weights='distance', metric='manhattan',
+            algorithm='ball_tree', leaf_size=40
+        )),
+        ('dt', DecisionTreeClassifier(
+            max_depth=25, min_samples_split=4, min_samples_leaf=1,
+            criterion='entropy', random_state=RANDOM_STATE
+        )),
+        ('rf', RandomForestClassifier(
+            n_estimators=200, max_depth=25, max_features='sqrt',
+            min_samples_split=2, min_samples_leaf=1,
+            n_jobs=ENSEMBLE_N_JOBS, random_state=RANDOM_STATE
+        ))
     ]
     
     return models
@@ -50,7 +66,7 @@ def create_voting_ensemble(models, voting='soft'):
     return VotingClassifier(
         estimators=models,
         voting=voting,
-        n_jobs=N_JOBS
+        n_jobs=ENSEMBLE_N_JOBS
     )
 
 
@@ -60,25 +76,40 @@ def create_stacking_ensemble(models):
     return StackingClassifier(
         estimators=models,
         final_estimator=LogisticRegression(max_iter=1000, random_state=RANDOM_STATE),
-        cv=STACKING_CV,
-        n_jobs=N_JOBS,
+        cv=ENSEMBLE_CV_FOLDS,
+        n_jobs=ENSEMBLE_N_JOBS,
         passthrough=False
     )
 
 
 def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test):
-    """Train model and return evaluation metrics."""
+    """Train model and return evaluation metrics with optimized CV."""
     logger.log(f"  Training {model_name}...")
     
-    # Cross-validation score
-    cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
-    cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring='accuracy', n_jobs=N_JOBS)
+    # Subsample for CV to speed up evaluation
+    cv_sample_size = min(ENSEMBLE_CV_SAMPLE_SIZE, len(X_train))
+    if cv_sample_size < len(X_train):
+        logger.log(f"    Running CV on {cv_sample_size:,} samples (subsampled)...")
+        idx = np.random.RandomState(RANDOM_STATE).choice(len(X_train), cv_sample_size, replace=False)
+        X_cv = X_train[idx]
+        y_cv = y_train[idx]
+    else:
+        X_cv = X_train
+        y_cv = y_train
+    
+    # Cross-validation score with reduced folds
+    cv = StratifiedKFold(n_splits=ENSEMBLE_CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
+    cv_scores = cross_val_score(
+        model, X_cv, y_cv, cv=cv, scoring='accuracy',
+        n_jobs=ENSEMBLE_N_JOBS, verbose=0
+    )
     cv_mean = cv_scores.mean() * 100
     cv_std = cv_scores.std() * 100
     
     logger.log(f"    CV accuracy: {cv_mean:.2f}% (+/- {cv_std:.2f}%)")
     
     # Train on full training set
+    logger.log(f"    Training on full {len(X_train):,} samples...")
     model.fit(X_train, y_train)
     
     # Test accuracy
