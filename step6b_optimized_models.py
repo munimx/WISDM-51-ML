@@ -21,6 +21,7 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from scipy.stats import randint, uniform
 import joblib
+from tqdm import tqdm
 
 from config import (DATA_DIR, VIS_DIR, METADATA_COLS, RANDOM_STATE, TEST_SIZE, 
                     CV_FOLDS, N_JOBS, ACTIVITY_NAMES)
@@ -68,14 +69,19 @@ def get_models_and_params():
             'n_iter': 15
         },
         'GradientBoosting': {
-            'model': GradientBoostingClassifier(random_state=RANDOM_STATE),
+            'model': GradientBoostingClassifier(
+                random_state=RANDOM_STATE,
+                n_iter_no_change=10,  # Early stopping after 10 iterations with no improvement
+                validation_fraction=0.1,  # Use 10% of data for early stopping validation
+                verbose=0
+            ),
             'params': {
-                'n_estimators': [50, 100],  # Reduced from [100, 150, 200]
-                'learning_rate': uniform(0.08, 0.07),  # Narrower range: 0.08-0.15
-                'max_depth': [3, 5],  # Reduced from [3, 5, 7]
-                'subsample': uniform(0.8, 0.2)  # Narrower range: 0.8-1.0
+                'n_estimators': [30, 50],  # Reduced further for speed
+                'learning_rate': [0.08, 0.1, 0.12],  # Discrete values instead of uniform
+                'max_depth': [3, 5],
+                'subsample': [0.8, 0.9]  # Discrete values instead of uniform
             },
-            'n_iter': 8  # Reduced from 15 to 8 iterations
+            'n_iter': 6  # Reduced to 6 iterations for faster tuning
         }
     }
     
@@ -134,13 +140,28 @@ def train_optimized_model(X_train, y_train, model_name, model_config):
     elif model_name == 'RandomForest':
         final_model = RandomForestClassifier(random_state=RANDOM_STATE, n_jobs=N_JOBS, **best_params)
     elif model_name == 'GradientBoosting':
-        final_model = GradientBoostingClassifier(random_state=RANDOM_STATE, **best_params)
+        # Apply hard limit on n_estimators for GradientBoosting
+        gb_params = best_params.copy()
+        gb_params['n_estimators'] = min(gb_params.get('n_estimators', 50), 50)
+        final_model = GradientBoostingClassifier(
+            random_state=RANDOM_STATE,
+            n_iter_no_change=10,  # Early stopping after 10 no-improvement iterations
+            validation_fraction=0.1,  # Use 10% for validation
+            verbose=0,
+            **gb_params
+        )
+        logger.log(f"    Training with early stopping (max {final_model.n_estimators} estimators)...")
     else:
         final_model = random_search.best_estimator_
     
     final_model.fit(X_train, y_train)
     
+    # Log early stopping info for GradientBoosting
+    if model_name == 'GradientBoosting' and hasattr(final_model, 'n_estimators_'):
+        logger.log(f"    Stopped at {final_model.n_estimators_} estimators (early stopping)")
+    
     return final_model, best_params, random_search.best_score_
+
 
 
 def generate_optimized_confusion_matrix(y_true, y_pred, model_name, accuracy):
