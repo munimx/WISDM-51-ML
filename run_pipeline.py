@@ -17,71 +17,15 @@ import step3b_advanced_features
 import step3c_combine_features
 import step4_scaling
 import step5_feature_selection
-import step6_model_training
 import step6b_optimized_models
 import step6c_ensemble_models
-import step7_results_summary
 import step8_spectral_features
-import step9_spectral_scaling
-import step10_spectral_selection
-import step11_spectral_model_training
-import step12_final_comparison
 
 
 def run_full_pipeline():
-    """Execute the complete pipeline from start to finish."""
-    start_time = time.time()
-    
-    logger.header("WISDM-51 ACTIVITY RECOGNITION PIPELINE")
-    logger.log(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.log("")
-    
-    # Part 1: Time-Domain Features
-    logger.header("PART 1: TIME-DOMAIN FEATURES")
-    
-    # Step 1: Data Cleaning
-    cleaned_df = step1_data_cleaning.run()
-    
-    # Step 2: Windowing
-    windowed_df = step2_windowing.run(cleaned_df)
-    
-    # Step 3: Feature Extraction
-    features_df = step3_feature_extraction.run(windowed_df)
-    
-    # Step 4: Scaling
-    scaled_dfs = step4_scaling.run(features_df)
-    
-    # Step 5: Feature Selection
-    selected_dfs = step5_feature_selection.run(scaled_dfs)
-    
-    # Step 6: Model Training
-    results_df = step6_model_training.run(selected_dfs)
-    
-    # Step 7: Results Summary
-    step7_results_summary.run(results_df)
-    
-    # Part 2: Spectral Features
-    logger.header("PART 2: SPECTRAL (FREQUENCY-DOMAIN) FEATURES")
-    
-    # Step 8: Spectral Feature Extraction
-    spectral_df = step8_spectral_features.run(windowed_df)
-    
-    # Step 9: Spectral Scaling
-    scaled_spectral_df = step9_spectral_scaling.run(spectral_df)
-    
-    # Step 10: Spectral Feature Selection
-    selected_spectral_df = step10_spectral_selection.run(scaled_spectral_df)
-    
-    # Step 11: Spectral Model Training
-    spectral_results_df = step11_spectral_model_training.run(selected_spectral_df)
-    
-    # Step 12: Final Comparison
-    step12_final_comparison.run(spectral_results_df)
-    
-    elapsed = time.time() - start_time
-    logger.header("PIPELINE COMPLETE")
-    logger.log(f"Total time: {elapsed/60:.2f} minutes")
-    logger.log(f"Finished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    """Execute the complete pipeline - now redirects to optimized pipeline."""
+    logger.log("Note: Legacy pipeline removed. Running optimized pipeline instead.")
+    run_optimized_pipeline()
 
 
 def run_optimized_pipeline():
@@ -164,15 +108,9 @@ def run_step(step_num):
         '3c': ('Combine Features', step3c_combine_features.run),
         4: ('Scaling', step4_scaling.run),
         5: ('Feature Selection', step5_feature_selection.run),
-        6: ('Model Training', step6_model_training.run),
         '6b': ('Optimized Models', step6b_optimized_models.run),
         '6c': ('Ensemble Models', step6c_ensemble_models.run),
-        7: ('Results Summary', step7_results_summary.run),
-        8: ('Spectral Features', step8_spectral_features.run),
-        9: ('Spectral Scaling', step9_spectral_scaling.run),
-        10: ('Spectral Selection', step10_spectral_selection.run),
-        11: ('Spectral Model Training', step11_spectral_model_training.run),
-        12: ('Final Comparison', step12_final_comparison.run)
+        8: ('Spectral Features', step8_spectral_features.run)
     }
     
     # Handle both int and string step numbers
@@ -183,7 +121,7 @@ def run_step(step_num):
     
     if step_key not in steps:
         print(f"Invalid step number: {step_num}")
-        print("Valid steps: 1-12, 3b, 3c, 6b, 6c")
+        print("Valid steps: 1-5, 8, 3b, 3c, 6b, 6c")
         return
     
     name, func = steps[step_key]
@@ -192,15 +130,9 @@ def run_step(step_num):
 
 
 def run_from_step(start_step):
-    """Execute pipeline from a specific step onwards."""
-    if start_step < 1 or start_step > 12:
-        print(f"Invalid step number: {start_step}")
-        return
-    
-    logger.header(f"RUNNING PIPELINE FROM STEP {start_step}")
-    
-    for step_num in range(start_step, 13):
-        run_step(step_num)
+    """Execute pipeline from a specific step onwards - deprecated."""
+    logger.log("Note: Sequential step execution deprecated. Use 'python run_pipeline.py optimized' instead.")
+    logger.log(f"To run individual steps, use: python run_pipeline.py step {start_step}")
 
 
 def print_usage():
@@ -211,35 +143,22 @@ WISDM-51 Activity Recognition Pipeline
 Usage:
     python run_pipeline.py              # Run complete baseline pipeline
     python run_pipeline.py optimized    # Run optimized pipeline (80%+ target)
-    python run_pipeline.py <step>       # Run specific step (1-12, 3b, 3c, 6b, 6c)
-    python run_pipeline.py from <step>  # Run from step onwards
+    python run_pipeline.py step <num>   # Run specific step (1-5, 8, 3b, 3c, 6b, 6c)
 
-Steps (Part 1 - Time-Domain):
+Steps (Optimized Pipeline):
     1  - Data Cleaning
     2  - Windowing  
     3  - Feature Extraction
-    3b - Advanced Features (wavelet, entropy, jerk)
-    3c - Combine Features (basic + advanced + spectral)
     4  - Scaling
     5  - Feature Selection
-    6  - Model Training (baseline)
-    6b - Optimized Models (GridSearchCV)
+    6b - Optimized Models (RandomSearch with early stopping)
     6c - Ensemble Models (Voting, Stacking)
-    7  - Results Summary
-
-Steps (Part 2 - Spectral):
     8  - Spectral Feature Extraction
-    9  - Spectral Scaling
-    10 - Spectral Feature Selection
-    11 - Spectral Model Training
-    12 - Final Comparison
 
 Examples:
-    python run_pipeline.py              # Full baseline pipeline (steps 1-12)
-    python run_pipeline.py optimized    # Optimized pipeline for 80%+ accuracy
-    python run_pipeline.py 4            # Run step 4 only
-    python run_pipeline.py 6b           # Run optimized model training
-    python run_pipeline.py from 8       # Run spectral pipeline (steps 8-12)
+    python run_pipeline.py optimized    # Full optimized pipeline (~3h 22min)
+    python run_pipeline.py step 6b      # Run optimized model training only
+    python run_pipeline.py step 6c      # Run ensemble models only
 """)
 
 
