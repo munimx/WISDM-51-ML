@@ -67,13 +67,21 @@ USE_PARALLEL_PROCESSING = True
 N_JOBS = -1  # Use all CPU cores
 CHUNK_SIZE = 50000  # For batch processing
 
+# Cache settings (for resumability)
+ENABLE_CACHING = True
+CACHE_DIR = os.path.join(BASE_DIR, '.cache')
+
+# Progress bar settings
+TQDM_DISABLE_THRESHOLD = 1000  # Disable tqdm for loops < 1000 iterations
+TQDM_NCOLS = 100  # Progress bar width
+
 # Model hyperparameters
 CV_FOLDS = 5
 GRID_SEARCH_VERBOSE = 1
 
 # Ensemble parameters
-VOTING_WEIGHTS = [1, 1, 1]  # Equal weights for voting
-STACKING_CV = 5
+VOTING_WEIGHTS = [1, 1, 1]  # Equal weights for voting (3 models without GB)
+STACKING_CV = 3  # Reduced from 5 for faster training
 
 # Metadata columns (activity_label is numeric 0-17)
 METADATA_COLS = ['subject_id', 'activity_label', 'sensor_type', 'device']
