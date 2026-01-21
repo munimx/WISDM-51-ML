@@ -1,8 +1,7 @@
 # WISDM-51 Activity Recognition Pipeline
 
 ## Overview
-Machine learning pipeline for human activity recognition using the WISDM-51 dataset, 
-comparing time-domain and spectral (frequency-domain) feature approaches.
+Optimized machine learning pipeline for human activity recognition using the WISDM-51 dataset with combined time-domain, frequency-domain, and advanced features. Achieves **78.26% accuracy** using ensemble methods.
 
 ## Dataset
 - **Source**: WISDM-51 (UCI ML Repository)
@@ -10,81 +9,87 @@ comparing time-domain and spectral (frequency-domain) feature approaches.
 - **Activities**: 18 different activities
 - **Sensors**: Phone and Watch (accelerometer + gyroscope)
 - **Sampling Rate**: 20 Hz
+- **Windows**: 516,094 total (10-second windows, 50% overlap)
+- **Split**: 412,875 train / 103,219 test samples
 
-## Pipeline Steps
+## Optimized Pipeline Architecture
 
-### Part 1: Time-Domain Features (Steps 1-7)
-1. **Data Cleaning** - Load and clean raw sensor data
-2. **Windowing** - 3-second windows (60 samples, 50% overlap)
-3. **Feature Extraction** - 60 time-domain features per window
-4. **Scaling** - MinMax, Standard, Robust scaling
-5. **Feature Selection** - Variance threshold + Mutual Information
-6. **Model Training** - KNN, Naive Bayes, Decision Tree, Random Forest
-7. **Results Summary** - Aggregate and report results
+The pipeline combines three feature extraction approaches for maximum accuracy:
 
-### Part 2: Spectral Features (Steps 8-12)
-8. **Spectral Features** - FFT-based frequency-domain feature extraction
-9. **Spectral Scaling** - MinMax scaling (best from Part 1)
-10. **Spectral Selection** - Variance threshold + Mutual Information
-11. **Spectral Training** - Train same 4 models on spectral features
-12. **Final Comparison** - Compare time-domain vs spectral results
+### 1. Data Preparation (Steps 1-2)
+- **Step 1: Data Cleaning** - Load and clean raw sensor data
+- **Step 2: Windowing** - 10-second windows (200 samples, 50% overlap)
 
-## Results Summary
+### 2. Feature Engineering (Steps 3, 3b, 8, 3c)
+- **Step 3: Basic Features** - Statistical features (mean, std, min, max, etc.)
+- **Step 3b: Advanced Features** - Wavelet coefficients, entropy, jerk metrics
+- **Step 8: Spectral Features** - FFT-based frequency-domain features
+- **Step 3c: Feature Combination** - Merge all feature types into unified dataset
 
-### Best Overall Result
-| Feature Type | Scaler | Model | Accuracy |
-|--------------|--------|-------|----------|
-| Time-Domain | minmax | RandomForest | **72.21%** |
+### 3. Preprocessing (Steps 4-5)
+- **Step 4: Scaling** - MinMax normalization on combined features
+- **Step 5: Feature Selection** - SelectKBest with mutual information
 
-### Time-Domain Best
-| Scaler | Model | Accuracy | Macro F1 |
-|--------|-------|----------|----------|
-| minmax | RandomForest | 72.21% | 72.10% |
+### 4. Model Training (Steps 6b-6c)
+- **Step 6b: Optimized Models** - Hyperparameter tuning with RandomizedSearchCV
+  - K-Nearest Neighbors (KNN)
+  - Decision Tree
+  - Random Forest
+  - Gradient Boosting (with early stopping)
+- **Step 6c: Ensemble Models** - Combining optimized base models
+  - Hard Voting Ensemble
+  - Soft Voting Ensemble  
+  - Stacking Ensemble (with LogisticRegression meta-learner)
 
-### Spectral Best
-| Scaler | Model | Accuracy | Macro F1 |
-|--------|-------|----------|----------|
-| MinMax | RandomForest | 44.69% | 43.70% |
+## Performance Results
 
-### Complete Results
-| Rank | Feature Type | Scaler | Model | Accuracy |
-|------|--------------|--------|-------|----------|
-| 1 | Time-Domain | minmax | RandomForest | 72.21% |
-| 2 | Time-Domain | robust | RandomForest | 67.31% |
-| 3 | Time-Domain | standard | RandomForest | 67.22% |
-| 4 | Time-Domain | standard | KNN | 66.48% |
-| 5 | Time-Domain | robust | KNN | 65.74% |
-| 6 | Time-Domain | minmax | DecisionTree | 57.85% |
-| 7 | Time-Domain | robust | DecisionTree | 56.25% |
-| 8 | Time-Domain | standard | DecisionTree | 56.21% |
-| 9 | Time-Domain | minmax | KNN | 55.70% |
-| 10 | Spectral | minmax | RandomForest | 44.69% |
+### 🏆 Best Model: Stacking Ensemble - 78.26%
 
-## Usage
+| Rank | Model | Test Accuracy | Notes |
+|------|-------|--------------|-------|
+| 1 | **Stacking Ensemble** | **78.26%** | Best overall - combines KNN, DecisionTree, RandomForest |
+| 2 | Random Forest | 77.44% | Strong individual performer |
+| 3 | Hard Voting | 75.05% | Majority vote ensemble |
+| 4 | Soft Voting | 70.85% | Probability-based ensemble |
+| 5 | K-Nearest Neighbors | 69.94% | Distance-based classification |
+| 6 | Decision Tree | 62.32% | Fast but less accurate |
+| 7 | Gradient Boosting | 51.63% | Trade-off: speed over accuracy |
 
-### Run Complete Pipeline
+### Optimization Impact
+- **Runtime**: Reduced from 5+ hours to **3h 22min** (2.5x speedup)
+- **Accuracy**: Improved from 72.21% baseline to **78.26%** (+6.05%)
+- **Key Optimizations**:
+  - Subsampled hyperparameter tuning (30K samples instead of 412K)
+  - Reduced cross-validation folds (3 instead of 5)
+  - GradientBoosting early stopping (10 iterations no improvement)
+  - RemoOptimized Pipeline (Recommended)
 ```bash
-python run_pipeline.py
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run complete optimized pipeline (~3h 22min)
+python run_pipeline.py optimized
 ```
 
 ### Run Individual Steps
 ```bash
-# Time-domain pipeline
-python step1_data_cleaning.py
-python step2_windowing.py
-python step3_feature_extraction.py
-python step4_scaling.py
-python step5_feature_selection.py
-python step6_model_training.py
-python step7_results_summary.py
+# Data preparation
+python run_pipeline.py step 1    # Data cleaning
+python run_pipeline.py step 2    # Windowing
 
-# Spectral pipeline
-python step8_spectral_features.py
-python step9_spectral_scaling.py
-python step10_spectral_selection.py
-python step11_spectral_model_training.py
-python step12_final_comparison.py
+# Feature extraction
+python run_pipeline.py step 3    # Basic features
+python run_pipeline.py step 8    # Spectral features
+
+# Model training
+python run_pipeline.py step 6b   # Optimized individual models
+python run_pipeline.py step 6c   # Ensemble models
 ```
+
+### Available Steps
+Valid steps: `1, 2, 3, 4, 5, 8, 6b, 6c`
+
+**Note**: Steps 3b and 3c are automatically executed within the optimized pipeline.
 
 ### Run from specific step
 ```bash
@@ -93,31 +98,67 @@ python run_pipeline.py from 8  # Run spectral pipeline only
 
 ## Directory Structure
 ```
-├── data/
+WISDM-51_Project/
+├── data/                        # Generated during pipeline execution
 │   ├── 01_cleaned/              # Cleaned sensor data
-│   ├── 02_windowed/             # Windowed data
-│   ├── 03_features/             # Time-domain features
-│   ├── 04_scaled/               # Scaled time-domain features
-│   ├── 05_selected/             # Selected time-domain features
-│   ├── 06_results/              # Time-domain model results
-│   ├── 08_spectral/             # Spectral features
-│   ├── 09_spectral_scaled/      # Scaled spectral features
-│   ├── 10_spectral_selected/    # Selected spectral features
-│   ├── 11_spectral_results/     # Spectral model results
-│   └── 12_final/                # Combined results
-├── visualizations/
-│   ├── confusion_matrices/      # Time-domain confusion matrices
-│   ├── spectral_confusion_matrices/  # Spectral confusion matrices
-│   ├── spectral_features/       # Spectral feature distributions
-│   └── ...
-├── raw/                         # Original WISDM-51 data
-├── FINAL_REPORT.md              # Comprehensive analysis report
-└── *.py                         # Pipeline scripts
+│   ├── 02_windowed/             # 10-second windowed data
+│   ├── 03_features/             # Basic statistical features
+│   ├── 03b_advanced/            # Advanced features (wavelet, entropy, jerk)
+│   ├── 03c_combined/            # All features combined
+│   ├── 04_scaled/               # MinMax scaled features
+│   ├── 05_selected/             # Selected features (SelectKBest)
+│   ├── 06b_optimized_results/   # Individual model results + trained models
+│   ├── 06c_ensemble_results/    # Ensemble model results + trained models
+│   └── 08_spectral_features/    # FFT frequency-domain features
+├── visualizations/              # Generated confusion matrices and charts
+│   ├── optimized_confusion_matrices/
+│   └── ensemble_confusion_matrices/
+├── raw/                         # Original WISDM-51 dataset
+│   ├── phone/
+│   │   ├── accel/               # Phone accelerometer data
+│   │   └── gyro/                # Phone gyroscope data
+│   └── watch/                   # Watch sensor data
+├── .venv/                       # Python virtual environment
+├── .cache/                      # Cache for resumable pipeline execution
+├── run_pipeline.py              # Main pipeline orchestrator
+├── step1_data_cleaning.py       # Data cleaning
+├── step2_windowing.py           # Window creation
+├── step3_feature_extraction.py  # Basic features
+├── step3b_advanced_features.py  # Advanced features
+├── step3c_combine_features.py   # Feature combination
+├── step4_scaling.py             # Feature scaling
+├── step5_feature_selection.py   # Feature selection
+├── step6b_optimized_models.py   # Optimized model training
+├── step6c_ensemble_models.py    # Ensemble model training
+├── step8_spectral_features.py   # Spectral feature extraction
+├── cache_utils.py               # Caching utilities
+├── config.py                    # Pipeline configuration
+├── logger.py                    # Logging utilities
+├── activity_key.txt             # Activity label mappings
+└── README.md                    # This file
 ```
 
 ## Requirements
-- Python 3.8+
-- pandas, numpy, scikit-learn, matplotlib, seaborn, scipy
+```bash
+# Python 3.13+ recommended (tested on 3.13.3)
+pip install pandas numpy scikit-learn matplotlib seaborn scipy pywavelets tqdm
+```
+
+## Key Features
+- ✅ Combined feature engineering (time + frequency + advanced)
+- ✅ Optimized hyperparameter tuning with subsampling
+- ✅ Ensemble methods for improved accuracy
+- ✅ Early stopping for GradientBoosting
+- ✅ Caching for pipeline resumability
+- ✅ Parallel processing for faster training
+- ✅ Comprehensive visualization and logging
+
+## Expected Runtime
+- **Full Optimized Pipeline**: ~3 hours 22 minutes
+  - Data preparation: ~5 min
+  - Feature extraction: ~25 min
+  - Step 6b (4 models): ~2h 31min
+  - Step 6c (3 ensembles): ~45 min
 
 ---
-*Last updated: 2026-01-18 21:33:04*
+*Last updated: 2026-01-21*
