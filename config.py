@@ -44,7 +44,7 @@ SCALER_NAMES = ['minmax', 'standard', 'robust']
 # Model parameters
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
-NUM_FEATURES = 30  # Number of features to select
+NUM_FEATURES = 50  # Increased for combined features
 
 # Spectral feature parameters
 SPECTRAL_ROLLOFF_THRESHOLD = 0.85  # 85% energy threshold
@@ -56,6 +56,24 @@ FREQ_BANDS = {
     'low': (0, 5),
     'mid': (5, 10),
 }
+
+# Advanced feature parameters
+USE_ADVANCED_FEATURES = True
+USE_WAVELET_FEATURES = True
+USE_ENTROPY_FEATURES = True
+
+# Optimization parameters
+USE_PARALLEL_PROCESSING = True
+N_JOBS = -1  # Use all CPU cores
+CHUNK_SIZE = 50000  # For batch processing
+
+# Model hyperparameters
+CV_FOLDS = 5
+GRID_SEARCH_VERBOSE = 1
+
+# Ensemble parameters
+VOTING_WEIGHTS = [1, 1, 1]  # Equal weights for voting
+STACKING_CV = 5
 
 # Metadata columns (activity_label is numeric 0-17)
 METADATA_COLS = ['subject_id', 'activity_label', 'sensor_type', 'device']
